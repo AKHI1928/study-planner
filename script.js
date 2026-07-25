@@ -5,7 +5,9 @@ let appData = {
         alarmEnabled: true,
         alarmVolume: 0.8,
         notificationsEnabled: true,
-        autoStartNextTask: false
+        autoStartNextTask: false,
+        alarmSound: 'digital', // Added option for alarm sound preset
+        alarmRepeats: 'infinite' // Added option for alarm repeat count
     },
     goals: {
         monthly: "",
@@ -18,31 +20,36 @@ let appData = {
 let activeDateKey = getFormattedDate(new Date());
 let activeCalendarDate = new Date();
 
-// Active Timer state
+// Active Timer state (Enhanced with timestamp-based tracking and localStorage persistence)
 let currentTimer = {
     taskId: null,
     taskName: "",
     durationSeconds: 0,
     remainingSeconds: 0,
-    timerId: null,
+    endTime: null, // Timestamp when timer is scheduled to end
     isRunning: false,
+    isPaused: false,
+    timerId: null,
     isPomodoro: false
 };
 
-// Pomodoro state
+// Pomodoro state (Enhanced with timestamp-based tracking and localStorage persistence)
 let pomoState = {
     mode: 'focus', // 'focus' or 'break'
     focusMinutes: 25,
     breakMinutes: 5,
     remainingSeconds: 25 * 60,
-    timerId: null,
-    isRunning: false
+    endTime: null, // Timestamp when pomodoro session is scheduled to end
+    isRunning: false,
+    isPaused: false,
+    timerId: null
 };
 
-// Web Audio API Alarm Sound generator variables
-let audioCtx = null;
-let alarmOscillator = null;
-let alarmGainNode = null;
+// Web Audio API / Audio Element Alarm state
+let activeAudioElement = null;
+let customAlarmDataUrl = null;
+let alarmLoopCount = 0;
+let maxAlarmLoops = Infinity;
 let alarmInterval = null;
 
 // --- INITIALIZATION ON LOAD ---
@@ -56,25 +63,128 @@ document.addEventListener("DOMContentLoaded", () => {
     initSettings();
     initBackupAndReset();
     initSearch();
+    
+    // Check and restore timers from persistent localStorage state on page load/refresh
+    restoreTimersFromStorage();
+    
     renderAll();
 });
 
 // --- LOCAL STORAGE ---
 function saveToLocalStorage() {
-    localStorage.setItem("nexusStudyData", JSON.stringify(appData));
+    // Save timer states alongside core app data for persistence across refreshes
+    const stateToSave = {
+        appData,
+        currentTimer: {
+            taskId: currentTimer.taskId,
+            taskName: currentTimer.taskName,
+            durationSeconds: currentTimer.durationSeconds,
+            remainingSeconds: currentTimer.remainingSeconds,
+            endTime: currentTimer.endTime,
+            isRunning: currentTimer.isRunning,
+            isPaused: currentTimer.isPaused,
+            isPomodoro: currentTimer.isPomodoro
+        },
+        pomoState: {
+            mode: pomoState.mode,
+            focusMinutes: pomoState.focusMinutes,
+            breakMinutes: pomoState.breakMinutes,
+            remainingSeconds: pomoState.remainingSeconds,
+            endTime: pomoState.endTime,
+            isRunning: pomoState.isRunning,
+            isPaused: pomoState.isPaused
+        },
+        customAlarmDataUrl
+    };
+    localStorage.setItem("nexusStudyData", JSON.stringify(stateToSave));
     calculateStreak();
 }
 
 function loadFromLocalStorage() {
-    const data = localStorage.getItem("nexusStudyData");
-    if (data) {
+    const rawData = localStorage.getItem("nexusStudyData");
+    if (rawData) {
         try {
-            appData = JSON.parse(data);
+            const parsed = JSON.parse(rawData);
+            // Handle backward compatibility if old format was saved directly
+            if (parsed.settings && parsed.days) {
+                appData = parsed;
+            } else if (parsed.appData) {
+                appData = parsed.appData;
+                if (parsed.customAlarmDataUrl) customAlarmDataUrl = parsed.customAlarmDataUrl;
+                
+                // Restore timer objects temporarily for initialization restoration
+                if (parsed.currentTimer) {
+                    currentTimer.taskId = parsed.currentTimer.taskId;
+                    currentTimer.taskName = parsed.currentTimer.taskName;
+                    currentTimer.durationSeconds = parsed.currentTimer.durationSeconds;
+                    currentTimer.remainingSeconds = parsed.currentTimer.remainingSeconds;
+                    currentTimer.endTime = parsed.currentTimer.endTime;
+                    currentTimer.isRunning = parsed.currentTimer.isRunning;
+                    currentTimer.isPaused = parsed.currentTimer.isPaused;
+                    currentTimer.isPomodoro = parsed.currentTimer.isPomodoro;
+                }
+                if (parsed.pomoState) {
+                    pomoState.mode = parsed.pomoState.mode;
+                    pomoState.focusMinutes = parsed.pomoState.focusMinutes;
+                    pomoState.breakMinutes = parsed.pomoState.breakMinutes;
+                    pomoState.remainingSeconds = parsed.pomoState.remainingSeconds;
+                    pomoState.endTime = parsed.pomoState.endTime;
+                    pomoState.isRunning = parsed.pomoState.isRunning;
+                    pomoState.isPaused = parsed.pomoState.isPaused;
+                }
+            }
         } catch (e) {
             console.error("Failed to parse local storage data", e);
         }
     }
     applyTheme(appData.settings.darkMode);
+}
+
+// Restore active timers upon page refresh/reload using precise timestamps
+function restoreTimersFromStorage() {
+    const now = Date.now();
+
+    // 1. Restore Task Timer if it was running or paused
+    if (currentTimer.isRunning && currentTimer.endTime) {
+        const secondsLeft = Math.round((currentTimer.endTime - now) / 1000);
+        if (secondsLeft > 0) {
+            currentTimer.remainingSeconds = secondsLeft;
+            // Open modal and resume timer loop
+            const task = getDayData(activeDateKey).tasks.find(t => t.id === currentTimer.taskId) || { name: currentTimer.taskName };
+            openActiveTimerModal(task, true); // true indicates restoring
+            startTaskTimerEngine(false); // resume without resetting endTime
+        } else {
+            // Timer expired while page was closed/refreshed
+            currentTimer.remainingSeconds = 0;
+            currentTimer.isRunning = false;
+            onTaskTimerFinished();
+        }
+    } else if (currentTimer.isPaused && currentTimer.remainingSeconds > 0) {
+        const task = getDayData(activeDateKey).tasks.find(t => t.id === currentTimer.taskId) || { name: currentTimer.taskName };
+        openActiveTimerModal(task, true);
+        document.getElementById("active-timer-countdown").textContent = formatSecondsToTime(currentTimer.remainingSeconds);
+        document.getElementById("modal-start-btn").style.display = 'none';
+        document.getElementById("modal-pause-btn").style.display = 'none';
+        document.getElementById("modal-resume-btn").style.display = 'inline-flex';
+    }
+
+    // 2. Restore Pomodoro Timer if it was running or paused
+    if (pomoState.isRunning && pomoState.endTime) {
+        const secondsLeft = Math.round((pomoState.endTime - now) / 1000);
+        if (secondsLeft > 0) {
+            pomoState.remainingSeconds = secondsLeft;
+            switchTab('pomodoro');
+            startPomodoroTimerEngine(false);
+        } else {
+            pomoState.remainingSeconds = 0;
+            pomoState.isRunning = false;
+            handlePomodoroCycleCompletion();
+        }
+    } else if (pomoState.isPaused && pomoState.remainingSeconds > 0) {
+        document.getElementById("pomo-time").textContent = formatSecondsToTime(pomoState.remainingSeconds);
+        document.getElementById("pomo-start-btn").disabled = false;
+        document.getElementById("pomo-pause-btn").disabled = true;
+    }
 }
 
 // --- UTILS & DATE HELPERS ---
@@ -156,7 +266,6 @@ function calculateStreak() {
             streak++;
             d.setDate(d.getDate() - 1);
         } else if (streak === 0 && key === getFormattedDate(new Date())) {
-            // Allow today to not be completed yet without breaking streak immediately if yesterday was completed
             d.setDate(d.getDate() - 1);
             const prevKey = getFormattedDate(d);
             const prevData = appData.days[prevKey];
@@ -189,7 +298,6 @@ function renderHome() {
     const dailyProg = totalTasks > 0 ? Math.round((completedTasksToday / totalTasks) * 100) : 0;
     document.getElementById("home-daily-progress").textContent = `${dailyProg}%`;
 
-    // Weekly progress (last 7 days average completion rate)
     let weekCompleted = 0;
     let weekTotal = 0;
     for (let i = 0; i < 7; i++) {
@@ -202,7 +310,6 @@ function renderHome() {
     const weeklyProg = weekTotal > 0 ? Math.round((weekCompleted / weekTotal) * 100) : 0;
     document.getElementById("home-weekly-progress").textContent = `${weeklyProg}%`;
 
-    // Monthly progress
     let monthCompleted = 0;
     let monthTotal = 0;
     const currentYearMonth = todayKey.substring(0, 7);
@@ -248,7 +355,6 @@ function renderCalendar() {
     const daysContainer = document.getElementById("calendar-days");
     daysContainer.innerHTML = "";
 
-    // Blank cells before first day
     for (let i = 0; i < firstDayIndex; i++) {
         const blank = document.createElement("div");
         blank.className = "calendar-day";
@@ -362,7 +468,6 @@ function renderPlanner() {
             </div>
         `;
 
-        // Checkbox toggle
         taskEl.querySelector(".task-checkbox").addEventListener("change", (e) => {
             task.completed = e.target.checked;
             saveToLocalStorage();
@@ -370,17 +475,14 @@ function renderPlanner() {
             renderHome();
         });
 
-        // Start Timer
         taskEl.querySelector(".start-task-timer-btn").addEventListener("click", () => {
             openActiveTimerModal(task);
         });
 
-        // Edit Task
         taskEl.querySelector(".edit-task-btn").addEventListener("click", () => {
             openTaskModal(task);
         });
 
-        // Delete Task
         taskEl.querySelector(".delete-task-btn").addEventListener("click", () => {
             dayData.tasks = dayData.tasks.filter(t => t.id !== task.id);
             saveToLocalStorage();
@@ -460,13 +562,18 @@ function saveTaskFromModal() {
     renderHome();
 }
 
-// --- TASK TIMER & WEB AUDIO ALARM MODULE ---
-function openActiveTimerModal(task) {
+// --- TASK TIMER & FLEXIBLE ALARM MODULE (TASK 1 & TASK 2) ---
+
+function openActiveTimerModal(task, isRestoring = false) {
     currentTimer.taskId = task.id;
     currentTimer.taskName = task.name;
-    currentTimer.durationSeconds = task.duration * 60;
-    currentTimer.remainingSeconds = currentTimer.durationSeconds;
-    currentTimer.isRunning = false;
+    if (!isRestoring) {
+        currentTimer.durationSeconds = task.duration * 60;
+        currentTimer.remainingSeconds = currentTimer.durationSeconds;
+        currentTimer.endTime = null;
+        currentTimer.isRunning = false;
+        currentTimer.isPaused = false;
+    }
     currentTimer.isPomodoro = false;
 
     document.getElementById("active-timer-task-name").textContent = task.name;
@@ -480,7 +587,6 @@ function openActiveTimerModal(task) {
 
     document.getElementById("active-timer-modal").classList.add("active");
 
-    // Setup listeners
     document.getElementById("modal-start-btn").onclick = () => startTaskTimer();
     document.getElementById("modal-pause-btn").onclick = () => pauseTaskTimer();
     document.getElementById("modal-resume-btn").onclick = () => resumeTaskTimer();
@@ -491,61 +597,90 @@ function openActiveTimerModal(task) {
     };
 }
 
+// Task 1: Timestamp-based Task Timer Engine supporting tab minimization, background sleep/resume & persistence
 function startTaskTimer() {
     currentTimer.isRunning = true;
+    currentTimer.isPaused = false;
+    currentTimer.endTime = Date.now() + (currentTimer.remainingSeconds * 1000);
+    saveToLocalStorage();
+
     document.getElementById("modal-start-btn").style.display = 'none';
     document.getElementById("modal-pause-btn").disabled = false;
 
+    startTaskTimerEngine(true);
+}
+
+function startTaskTimerEngine(freshStart = true) {
     if (currentTimer.timerId) clearInterval(currentTimer.timerId);
 
     currentTimer.timerId = setInterval(() => {
-        if (currentTimer.remainingSeconds > 0) {
-            currentTimer.remainingSeconds--;
+        const now = Date.now();
+        const secondsLeft = Math.round((currentTimer.endTime - now) / 1000);
+
+        if (secondsLeft > 0) {
+            currentTimer.remainingSeconds = secondsLeft;
             document.getElementById("active-timer-countdown").textContent = formatSecondsToTime(currentTimer.remainingSeconds);
         } else {
             clearInterval(currentTimer.timerId);
             currentTimer.isRunning = false;
+            currentTimer.remainingSeconds = 0;
+            document.getElementById("active-timer-countdown").textContent = formatSecondsToTime(0);
+            saveToLocalStorage();
             onTaskTimerFinished();
         }
-    }, 1000);
+    }, 200); // 200ms interval for smooth sub-second catchup accuracy on tab focus return
 }
 
 function pauseTaskTimer() {
     currentTimer.isRunning = false;
+    currentTimer.isPaused = true;
     clearInterval(currentTimer.timerId);
+    currentTimer.endTime = null;
+    saveToLocalStorage();
+
     document.getElementById("modal-pause-btn").style.display = 'none';
     document.getElementById("modal-resume-btn").style.display = 'inline-flex';
 }
 
 function resumeTaskTimer() {
+    currentTimer.isRunning = true;
+    currentTimer.isPaused = false;
+    currentTimer.endTime = Date.now() + (currentTimer.remainingSeconds * 1000);
+    saveToLocalStorage();
+
     document.getElementById("modal-resume-btn").style.display = 'none';
     document.getElementById("modal-pause-btn").style.display = 'inline-flex';
-    startTaskTimer();
+    startTaskTimerEngine(false);
 }
 
 function stopTaskTimer() {
     clearInterval(currentTimer.timerId);
     currentTimer.isRunning = false;
+    currentTimer.isPaused = false;
+    currentTimer.endTime = null;
+    saveToLocalStorage();
     document.getElementById("active-timer-modal").classList.remove("active");
 }
 
 function restartTaskTimer() {
     clearInterval(currentTimer.timerId);
+    currentTimer.isRunning = false;
+    currentTimer.isPaused = false;
     currentTimer.remainingSeconds = currentTimer.durationSeconds;
+    currentTimer.endTime = null;
+    saveToLocalStorage();
+
     document.getElementById("active-timer-countdown").textContent = formatSecondsToTime(currentTimer.remainingSeconds);
     document.getElementById("modal-start-btn").style.display = 'inline-flex';
     document.getElementById("modal-pause-btn").style.display = 'inline-flex';
     document.getElementById("modal-pause-btn").disabled = true;
     document.getElementById("modal-resume-btn").style.display = 'none';
-    currentTimer.isRunning = false;
 }
 
 function onTaskTimerFinished() {
-    // Record study time
     const dayData = getDayData(activeDateKey);
     dayData.studyTime += currentTimer.durationSeconds;
 
-    // Mark task completed automatically
     if (currentTimer.taskId) {
         const task = dayData.tasks.find(t => t.id === currentTimer.taskId);
         if (task) {
@@ -557,11 +692,13 @@ function onTaskTimerFinished() {
     renderHome();
 
     document.getElementById("active-timer-modal").classList.remove("active");
-    triggerLoudAlarm(`Task Completed: ${currentTimer.taskName}`);
+    triggerFlexibleAlarm(`Task Completed: ${currentTimer.taskName}`);
 }
 
-// --- WEB AUDIO API LOUD ALARM ---
-function triggerLoudAlarm(message) {
+
+// --- TASK 2: FLEXIBLE ALARM SYSTEM ---
+
+function triggerFlexibleAlarm(message) {
     if (!appData.settings.alarmEnabled) return;
 
     document.getElementById("alarm-task-msg").textContent = message;
@@ -580,51 +717,164 @@ function triggerLoudAlarm(message) {
         }
     }
 
-    // Play repeating Web Audio sound
+    // Configure repeat limits
+    alarmLoopCount = 0;
+    const repeatSetting = appData.settings.alarmRepeats;
+    if (repeatSetting === '1') maxAlarmLoops = 1;
+    else if (repeatSetting === '3') maxAlarmLoops = 3;
+    else if (repeatSetting === '5') maxAlarmLoops = 5;
+    else maxAlarmLoops = Infinity; // Infinite until stop
+
+    playSelectedAlarmSound();
+}
+
+// Play selected built-in or custom alarm sound using Web Audio API or HTML5 Audio
+function playSelectedAlarmSound() {
+    const soundType = appData.settings.alarmSound;
+    const volume = appData.settings.alarmVolume;
+
+    if (soundType === 'custom' && customAlarmDataUrl) {
+        playCustomAudio(customAlarmDataUrl, volume);
+        return;
+    }
+
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        function playBeepPattern() {
+        const playPattern = () => {
+            if (alarmLoopCount >= maxAlarmLoops) {
+                stopFlexibleAlarmAudio();
+                return;
+            }
+            alarmLoopCount++;
+
             if (!audioCtx) return;
-            alarmOscillator = audioCtx.createOscillator();
-            alarmGainNode = audioCtx.createGain();
+            const now = audioCtx.currentTime;
 
-            alarmOscillator.type = 'square';
-            alarmOscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+            if (soundType === 'bell') {
+                // School Bell simulation: dual harmonic frequencies with long decay
+                playTone(audioCtx, 659.25, now, 1.5, 'sine', volume);
+                playTone(audioCtx, 523.25, now, 1.5, 'sine', volume * 0.8);
+            } else if (soundType === 'digital') {
+                // Digital Alarm: alternating pulsing high beeps
+                playTone(audioCtx, 880, now, 0.25, 'square', volume);
+                playTone(audioCtx, 1046.5, now + 0.3, 0.25, 'square', volume);
+            } else if (soundType === 'chime') {
+                // Soft Chime: gentle high triangle wave melody
+                playTone(audioCtx, 523.25, now, 0.4, 'triangle', volume * 0.7);
+                playTone(audioCtx, 659.25, now + 0.2, 0.4, 'triangle', volume * 0.7);
+                playTone(audioCtx, 783.99, now + 0.4, 0.6, 'triangle', volume * 0.7);
+            } else if (soundType === 'piano') {
+                // Piano style arpeggio emulation
+                playTone(audioCtx, 440, now, 0.5, 'sawtooth', volume * 0.5);
+                playTone(audioCtx, 554.37, now + 0.15, 0.5, 'sawtooth', volume * 0.5);
+                playTone(audioCtx, 659.25, now + 0.3, 0.5, 'sawtooth', volume * 0.5);
+            } else if (soundType === 'rain') {
+                // Rain / White noise gentle pulse
+                playWhiteNoiseBurst(audioCtx, now, 0.6, volume * 0.9);
+            } else {
+                // Classic Beep fallback
+                playTone(audioCtx, 880, now, 0.3, 'square', volume);
+            }
+        };
 
-            alarmGainNode.gain.setValueAtTime(appData.settings.alarmVolume, audioCtx.currentTime);
+        playPattern();
+        const intervalTime = soundType === 'bell' ? 2500 : (soundType === 'chime' ? 1800 : 1200);
+        alarmInterval = setInterval(playPattern, intervalTime);
 
-            alarmOscillator.connect(alarmGainNode);
-            alarmGainNode.connect(audioCtx.destination);
-
-            alarmOscillator.start();
-            alarmOscillator.stop(audioCtx.currentTime + 0.4);
-        }
-
-        playBeepPattern();
-        alarmInterval = setInterval(playBeepPattern, 700);
     } catch (e) {
         console.error("Web Audio API error", e);
     }
-
-    document.getElementById("stop-alarm-btn").onclick = () => {
-        stopLoudAlarm();
-    };
 }
 
-function stopLoudAlarm() {
-    if (alarmInterval) clearInterval(alarmInterval);
-    if (alarmOscillator) {
-        try { alarmOscillator.stop(); } catch (e) {}
+// Helper tone generator for Web Audio API built-in alarms
+function playTone(ctx, freq, startTime, duration, type, volume) {
+    try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        
+        gain.gain.setValueAtTime(volume, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    } catch(err) {}
+}
+
+// Helper white noise generator for rain sound option
+function playWhiteNoiseBurst(ctx, startTime, duration, volume) {
+    try {
+        const bufferSize = ctx.sampleRate * duration;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = ctx.createBufferSource();
+        whiteNoise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1000, startTime);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(volume, startTime);
+        gain.gain.linearRampToValueAtTime(0.01, startTime + duration);
+
+        whiteNoise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        whiteNoise.start(startTime);
+    } catch(err) {}
+}
+
+// Helper for custom uploaded audio playback
+function playCustomAudio(dataUrl, volume) {
+    try {
+        activeAudioElement = new Audio(dataUrl);
+        activeAudioElement.volume = volume;
+        activeAudioElement.loop = (maxAlarmLoops === Infinity);
+        
+        let playCount = 0;
+        activeAudioElement.onended = () => {
+            playCount++;
+            if (playCount < maxAlarmLoops) {
+                activeAudioElement.play();
+            }
+        };
+        activeAudioElement.play().catch(err => console.error("Custom audio play error", err));
+    } catch(e) {
+        console.error("Custom audio initialization error", e);
     }
+}
+
+function stopFlexibleAlarmAudio() {
+    if (alarmInterval) clearInterval(alarmInterval);
+    alarmInterval = null;
+
     if (audioCtx) {
-        audioCtx.close();
+        try { audioCtx.close(); } catch (e) {}
         audioCtx = null;
     }
-    document.getElementById("alarm-overlay").classList.remove("active");
+
+    if (activeAudioElement) {
+        try {
+            activeAudioElement.pause();
+            activeAudioElement.currentTime = 0;
+        } catch (e) {}
+        activeAudioElement = null;
+    }
 }
 
-// --- POMODORO MODULE ---
+
+// --- POMODORO MODULE (Task 1 Timestamp-based Integration) ---
 function initPomodoro() {
     const modeBtns = document.querySelectorAll(".pomo-mode-btn");
     modeBtns.forEach(btn => {
@@ -653,8 +903,11 @@ function initPomodoro() {
 function resetPomodoroTimer() {
     if (pomoState.timerId) clearInterval(pomoState.timerId);
     pomoState.isRunning = false;
+    pomoState.isPaused = false;
+    pomoState.endTime = null;
     pomoState.mode = 'focus';
     pomoState.remainingSeconds = pomoState.focusMinutes * 60;
+    saveToLocalStorage();
     
     document.getElementById("pomo-time").textContent = formatSecondsToTime(pomoState.remainingSeconds);
     document.getElementById("pomo-status-text").textContent = "Focus Session";
@@ -662,41 +915,59 @@ function resetPomodoroTimer() {
     document.getElementById("pomo-pause-btn").disabled = true;
 }
 
+// Task 1: Timestamp-based Pomodoro Timer Engine supporting tab backgrounding and resume
 function startPomodoroTimer() {
     pomoState.isRunning = true;
+    pomoState.isPaused = false;
+    pomoState.endTime = Date.now() + (pomoState.remainingSeconds * 1000);
+    saveToLocalStorage();
+
     document.getElementById("pomo-start-btn").disabled = true;
     document.getElementById("pomo-pause-btn").disabled = false;
 
+    startPomodoroTimerEngine(true);
+}
+
+function startPomodoroTimerEngine(freshStart = true) {
     if (pomoState.timerId) clearInterval(pomoState.timerId);
 
     pomoState.timerId = setInterval(() => {
-        if (pomoState.remainingSeconds > 0) {
-            pomoState.remainingSeconds--;
+        const now = Date.now();
+        const secondsLeft = Math.round((pomoState.endTime - now) / 1000);
+
+        if (secondsLeft > 0) {
+            pomoState.remainingSeconds = secondsLeft;
             document.getElementById("pomo-time").textContent = formatSecondsToTime(pomoState.remainingSeconds);
         } else {
             clearInterval(pomoState.timerId);
             pomoState.isRunning = false;
+            pomoState.remainingSeconds = 0;
+            document.getElementById("pomo-time").textContent = formatSecondsToTime(0);
+            saveToLocalStorage();
             handlePomodoroCycleCompletion();
         }
-    }, 1000);
+    }, 200);
 }
 
 function pausePomodoroTimer() {
     pomoState.isRunning = false;
+    pomoState.isPaused = true;
     clearInterval(pomoState.timerId);
+    pomoState.endTime = null;
+    saveToLocalStorage();
+
     document.getElementById("pomo-start-btn").disabled = false;
     document.getElementById("pomo-pause-btn").disabled = true;
 }
 
 function handlePomodoroCycleCompletion() {
     if (pomoState.mode === 'focus') {
-        // Record study time for today
         const dayData = getDayData(getFormattedDate(new Date()));
         dayData.studyTime += pomoState.focusMinutes * 60;
         saveToLocalStorage();
         renderHome();
 
-        triggerLoudAlarm("Focus Session Completed! Time for a break.");
+        triggerFlexibleAlarm("Focus Session Completed! Time for a break.");
         
         pomoState.mode = 'break';
         pomoState.remainingSeconds = pomoState.breakMinutes * 60;
@@ -710,7 +981,7 @@ function handlePomodoroCycleCompletion() {
             document.getElementById("pomo-pause-btn").disabled = true;
         }
     } else {
-        triggerLoudAlarm("Break Finished! Ready for next session?");
+        triggerFlexibleAlarm("Break Finished! Ready for next session?");
         pomoState.mode = 'focus';
         pomoState.remainingSeconds = pomoState.focusMinutes * 60;
         document.getElementById("pomo-status-text").textContent = "Focus Session";
@@ -727,7 +998,6 @@ function renderStatistics() {
     const todayData = getDayData(todayKey);
     document.getElementById("stat-today-time").textContent = formatMinutes(Math.round(todayData.studyTime / 60));
 
-    // Weekly study time
     let weeklyMins = 0;
     let totalCompleted = 0;
     let totalPending = 0;
@@ -741,7 +1011,6 @@ function renderStatistics() {
     }
     document.getElementById("stat-weekly-time").textContent = formatMinutes(weeklyMins);
 
-    // Monthly study time
     let monthlyMins = 0;
     const currentYearMonth = todayKey.substring(0, 7);
     for (let key in appData.days) {
@@ -758,11 +1027,10 @@ function renderStatistics() {
     const compRate = totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0;
     document.getElementById("stat-completion-rate").textContent = `${compRate}%`;
 
-    // Render 7 day graph
     const graphContainer = document.getElementById("study-graph");
     graphContainer.innerHTML = "";
     
-    let maxMins = 60; // baseline scale
+    let maxMins = 60;
     let dailyMinsArr = [];
     for (let i = 6; i >= 0; i--) {
         let tempD = new Date();
@@ -885,6 +1153,11 @@ function initBackupAndReset() {
                     saveToLocalStorage();
                     renderAll();
                     alert("Planner data successfully imported!");
+                } else if (parsed && parsed.appData) {
+                    appData = parsed.appData;
+                    saveToLocalStorage();
+                    renderAll();
+                    alert("Planner data successfully imported!");
                 } else {
                     alert("Invalid backup file structure.");
                 }
@@ -903,7 +1176,7 @@ function initBackupAndReset() {
     });
 }
 
-// --- SETTINGS MODULE ---
+// --- SETTINGS MODULE (Enhanced with Alarm Options & UI bindings) ---
 function initSettings() {
     const themeToggle = document.getElementById("settings-theme-toggle");
     const topThemeToggle = document.getElementById("theme-toggle");
@@ -912,11 +1185,90 @@ function initSettings() {
     const notifToggle = document.getElementById("settings-notif-toggle");
     const autoStartToggle = document.getElementById("settings-autostart-toggle");
 
+    // Ensure appData.settings properties exist
+    if (!appData.settings.alarmSound) appData.settings.alarmSound = 'digital';
+    if (!appData.settings.alarmRepeats) appData.settings.alarmRepeats = 'infinite';
+
     themeToggle.checked = appData.settings.darkMode;
     alarmToggle.checked = appData.settings.alarmEnabled;
     volumeSlider.value = appData.settings.alarmVolume;
     notifToggle.checked = appData.settings.notificationsEnabled;
     autoStartToggle.checked = appData.settings.autoStartNextTask;
+
+    // Dynamically inject advanced alarm options into the settings card without rewriting HTML structure
+    const settingsCard = document.querySelector(".settings-card");
+    if (settingsCard && !document.getElementById("alarm-sound-select")) {
+        const alarmOptionsDiv = document.createElement("div");
+        alarmOptionsDiv.className = "setting-item";
+        alarmOptionsDiv.innerHTML = `
+            <div>
+                <h3>Alarm Sound & Repeats</h3>
+                <p>Choose alarm preset tone and repetition limit</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <select id="alarm-sound-select" style="background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 8px; color: var(--text-primary);">
+                    <option value="digital">Digital Alarm</option>
+                    <option value="bell">School Bell</option>
+                    <option value="chime">Soft Chime</option>
+                    <option value="piano">Piano</option>
+                    <option value="rain">Rain</option>
+                    <option value="classic">Classic Beep</option>
+                    <option value="custom">Upload Custom MP3/WAV</option>
+                </select>
+                <select id="alarm-repeat-select" style="background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 8px; color: var(--text-primary);">
+                    <option value="1">1 Time</option>
+                    <option value="3">3 Times</option>
+                    <option value="5">5 Times</option>
+                    <option value="infinite">Infinite (Until Stop)</option>
+                </select>
+            </div>
+        `;
+        settingsCard.appendChild(alarmOptionsDiv);
+
+        // Hidden file input for custom alarm upload
+        const fileUploadInput = document.createElement("input");
+        fileUploadInput.type = "file";
+        fileUploadInput.id = "custom-alarm-file-input";
+        fileUploadInput.accept = "audio/mp3,audio/wav,audio/*";
+        fileUploadInput.style.display = "none";
+        document.body.appendChild(fileUploadInput);
+
+        const soundSelect = document.getElementById("alarm-sound-select");
+        const repeatSelect = document.getElementById("alarm-repeat-select");
+        
+        soundSelect.value = appData.settings.alarmSound;
+        repeatSelect.value = appData.settings.alarmRepeats;
+
+        soundSelect.addEventListener("change", (e) => {
+            const val = e.target.value;
+            if (val === 'custom') {
+                fileUploadInput.click();
+            } else {
+                appData.settings.alarmSound = val;
+                saveToLocalStorage();
+            }
+        });
+
+        fileUploadInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    customAlarmDataUrl = event.target.result;
+                    appData.settings.alarmSound = 'custom';
+                    soundSelect.value = 'custom';
+                    saveToLocalStorage();
+                    alert("Custom alarm audio loaded successfully!");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        repeatSelect.addEventListener("change", (e) => {
+            appData.settings.alarmRepeats = e.target.value;
+            saveToLocalStorage();
+        });
+    }
 
     const handleThemeChange = (isDark) => {
         appData.settings.darkMode = isDark;
@@ -950,6 +1302,16 @@ function initSettings() {
         appData.settings.autoStartNextTask = e.target.checked;
         saveToLocalStorage();
     });
+
+    // Ensure Stop Alarm button stops every alarm type (Task 2 requirement)
+    const stopAlarmBtn = document.getElementById("stop-alarm-btn");
+    if (stopAlarmBtn) {
+        // Replace onclick to safely stop audio element, intervals, and web audio oscillators
+        stopAlarmBtn.onclick = () => {
+            stopFlexibleAlarmAudio();
+            document.getElementById("alarm-overlay").classList.remove("active");
+        };
+    }
 }
 
 function applyTheme(isDark) {
