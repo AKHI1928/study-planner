@@ -1,36 +1,51 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusStudy - Offline Study Planner</title>
-    <link rel="stylesheet" href="style.css">
+    <title>NexusStudy — World-Class Productivity & Study Planner</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
+    <!-- App Container -->
+    <div class="app-layout">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <i class="fa-solid fa-graduation-cap logo-icon"></i>
-                <h2>NexusStudy</h2>
+                <div class="app-logo">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>NexusStudy</span>
+                </div>
+                <button class="mobile-close-btn" id="mobileCloseBtn"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <nav class="sidebar-nav">
-                <button class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> Home</button>
-                <button class="nav-item" data-tab="calendar"><i class="fa-solid fa-calendar-days"></i> Calendar</button>
-                <button class="nav-item" data-tab="planner"><i class="fa-solid fa-list-check"></i> Daily Planner</button>
-                <button class="nav-item" data-tab="pomodoro"><i class="fa-solid fa-stopwatch"></i> Pomodoro</button>
-                <button class="nav-item" data-tab="stats"><i class="fa-solid fa-chart-pie"></i> Statistics</button>
-                <button class="nav-item" data-tab="goals"><i class="fa-solid fa-bullseye"></i> Goals</button>
-                <button class="nav-item" data-tab="search"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-                <button class="nav-item" data-tab="backup"><i class="fa-solid fa-database"></i> Backup & Reset</button>
-                <button class="nav-item" data-tab="settings"><i class="fa-solid fa-gear"></i> Settings</button>
-            </nav>
+            
+            <div class="sidebar-menu">
+                <div class="menu-category">Overview</div>
+                <button class="nav-item active" data-target="dashboard-view"><i class="fa-solid fa-house"></i> Dashboard</button>
+                <button class="nav-item" data-target="planner-view"><i class="fa-solid fa-list-check"></i> Planner & Tasks</button>
+                <button class="nav-item" data-target="calendar-view"><i class="fa-solid fa-calendar-days"></i> Calendar</button>
+                
+                <div class="menu-category">Focus & Time</div>
+                <button class="nav-item" data-target="timer-view"><i class="fa-solid fa-stopwatch"></i> Focus Timer</button>
+                <button class="nav-item" data-target="alarm-view"><i class="fa-solid fa-bell"></i> Alarm Center</button>
+                
+                <div class="menu-category">Knowledge & Insights</div>
+                <button class="nav-item" data-target="notes-view"><i class="fa-solid fa-note-sticky"></i> Smart Notes</button>
+                <button class="nav-item" data-target="analytics-view"><i class="fa-solid fa-chart-pie"></i> Analytics</button>
+                
+                <div class="menu-category">System</div>
+                <button class="nav-item" data-target="settings-view"><i class="fa-solid fa-gear"></i> Settings</button>
+            </div>
+
             <div class="sidebar-footer">
-                <div class="streak-badge">
-                    <i class="fa-solid fa-fire flame-icon"></i>
-                    <div>
-                        <span id="streak-count">0</span> Days Streak
+                <div class="user-profile-mini">
+                    <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="user-info">
+                        <span class="user-name">Scholar Pro</span>
+                        <span class="user-status">Active Focus</span>
                     </div>
                 </div>
             </div>
@@ -38,408 +53,279 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Top Bar -->
-            <header class="top-bar">
-                <div class="current-date-time">
-                    <span id="live-date">Loading...</span>
-                    <span class="separator">|</span>
-                    <span id="live-clock">00:00:00</span>
+            <!-- Top Navbar -->
+            <header class="top-navbar">
+                <div class="nav-left">
+                    <button class="menu-toggle" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+                    <h2 class="view-title" id="viewTitle">Dashboard</h2>
                 </div>
-                <div class="top-bar-actions">
-                    <button id="theme-toggle" class="icon-btn" title="Toggle Dark/Light Mode"><i class="fa-solid fa-moon"></i></button>
+                <div class="nav-right">
+                    <div class="search-bar-top">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="globalSearch" placeholder="Search tasks, notes, planner...">
+                    </div>
+                    <button class="icon-btn" id="quickAddBtn" title="Quick Add Task"><i class="fa-solid fa-plus"></i></button>
+                    <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
                 </div>
             </header>
 
-            <!-- Views / Tabs Container -->
-            <div class="views-container">
-                <!-- HOME VIEW -->
-                <section id="home-view" class="view active">
+            <!-- Views Container -->
+            <div class="views-wrapper">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <section class="app-view active" id="dashboard-view">
                     <div class="welcome-banner">
-                        <h1>Welcome back, Scholar! 🚀</h1>
-                        <p>Here is your overview for today. Keep pushing towards your goals.</p>
+                        <div class="welcome-text">
+                            <h1>Welcome back, Scholar! ✨</h1>
+                            <p id="currentDateDisplay">Loading date...</p>
+                            <div class="quote-box">
+                                <i class="fa-solid fa-quote-left"></i>
+                                <span id="motivationalQuote">"The secret of getting ahead is getting started."</span>
+                            </div>
+                        </div>
+                        <div class="weather-widget">
+                            <i class="fa-solid fa-cloud-sun weather-icon"></i>
+                            <div>
+                                <h4 id="weatherTemp">24°C</h4>
+                                <p id="weatherCondition">Partly Cloudy</p>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Progress Cards Grid -->
                     <div class="metrics-grid">
                         <div class="metric-card">
-                            <div class="metric-icon study-time"><i class="fa-solid fa-clock"></i></div>
+                            <div class="metric-icon blue"><i class="fa-solid fa-bullseye"></i></div>
                             <div class="metric-info">
-                                <h3>Today's Study Time</h3>
-                                <p id="home-today-time">0h 0m</p>
+                                <h3>Productivity Score</h3>
+                                <span id="dashProdScore">85%</span>
                             </div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-icon tasks-rem"><i class="fa-solid fa-list"></i></div>
+                            <div class="metric-icon green"><i class="fa-solid fa-circle-check"></i></div>
                             <div class="metric-info">
-                                <h3>Remaining Tasks</h3>
-                                <p id="home-remaining-tasks">0</p>
+                                <h3>Completed Tasks</h3>
+                                <span id="dashCompletedTasks">0/0</span>
                             </div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-icon daily-prog"><i class="fa-solid fa-bolt"></i></div>
+                            <div class="metric-icon orange"><i class="fa-solid fa-clock"></i></div>
                             <div class="metric-info">
-                                <h3>Daily Progress</h3>
-                                <p id="home-daily-progress">0%</p>
+                                <h3>Pending Tasks</h3>
+                                <span id="dashPendingTasks">0</span>
                             </div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-icon weekly-prog"><i class="fa-solid fa-chart-line"></i></div>
+                            <div class="metric-icon purple"><i class="fa-solid fa-fire"></i></div>
                             <div class="metric-info">
-                                <h3>Weekly Progress</h3>
-                                <p id="home-weekly-progress">0%</p>
+                                <h3>Study Streak</h3>
+                                <span id="dashStreak">5 Days</span>
                             </div>
                         </div>
                     </div>
-                    <div class="home-grid">
-                        <div class="card">
-                            <h2>Monthly Progress Overview</h2>
-                            <div class="progress-bar-container">
-                                <div id="home-monthly-bar" class="progress-bar-fill" style="width: 0%;"></div>
+
+                    <!-- Dashboard Subgrid -->
+                    <div class="dashboard-split">
+                        <div class="card focus-card">
+                            <div class="card-header">
+                                <h3><i class="fa-solid fa-crosshairs"></i> Today's Focus</h3>
                             </div>
-                            <span id="home-monthly-text">0% Completed this month</span>
+                            <div class="focus-content">
+                                <p id="todayFocusText">Master advanced algorithmic complexity & data structures.</p>
+                                <button class="btn-primary-sm" id="editFocusBtn">Edit Focus</button>
+                            </div>
                         </div>
-                        <div class="card">
-                            <h2>Quick Actions</h2>
-                            <div class="quick-actions-flex">
-                                <button class="btn primary" onclick="switchTab('planner')"><i class="fa-solid fa-plus"></i> Open Today's Planner</button>
-                                <button class="btn secondary" onclick="switchTab('pomodoro')"><i class="fa-solid fa-play"></i> Start Pomodoro</button>
+                        <div class="card stats-card-mini">
+                            <div class="card-header">
+                                <h3><i class="fa-solid fa-chart-line"></i> Weekly Overview</h3>
+                            </div>
+                            <div class="mini-chart-container" id="weeklyStatsChart">
+                                <!-- Dynamic bars injected via JS -->
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- CALENDAR VIEW -->
-                <section id="calendar-view" class="view">
-                    <div class="calendar-header">
-                        <div class="calendar-nav">
-                            <button class="btn icon-btn" id="prev-month"><i class="fa-solid fa-chevron-left"></i></button>
-                            <h2 id="calendar-month-year">Month Year</h2>
-                            <button class="btn icon-btn" id="next-month"><i class="fa-solid fa-chevron-right"></i></button>
-                        </div>
-                        <button class="btn secondary" id="jump-today">Today</button>
-                    </div>
-                    <div class="calendar-grid-wrapper">
-                        <div class="weekdays-row">
-                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                        </div>
-                        <div id="calendar-days" class="days-grid"></div>
-                    </div>
-                </section>
-
-                <!-- DAILY PLANNER VIEW -->
-                <section id="planner-view" class="view">
-                    <div class="planner-header">
-                        <div class="planner-date-selector">
-                            <h2 id="planner-active-date-title">Planner for Today</h2>
-                            <span id="planner-date-subtitle">Select a date from calendar or view today</span>
-                        </div>
-                        <button class="btn primary" id="open-add-task-modal"><i class="fa-solid fa-plus"></i> Add New Task</button>
-                    </div>
-
-                    <div class="planner-goals-notes-grid">
-                        <div class="card">
-                            <h3><i class="fa-solid fa-bullseye"></i> Daily Goals</h3>
-                            <textarea id="daily-goals-input" placeholder="Set goals for this day..."></textarea>
-                        </div>
-                        <div class="card">
-                            <h3><i class="fa-solid fa-note-sticky"></i> Daily Notes</h3>
-                            <textarea id="daily-notes-input" placeholder="Jot down quick thoughts, formulas, or reminders..."></textarea>
-                        </div>
-                    </div>
-
-                    <div class="card task-list-card">
-                        <h3><i class="fa-solid fa-tasks"></i> Study Tasks</h3>
-                        <div id="tasks-container" class="tasks-container">
-                            <!-- Dynamic Tasks -->
-                        </div>
-                    </div>
-                </section>
-
-                <!-- POMODORO VIEW -->
-                <section id="pomodoro-view" class="view">
-                    <div class="pomodoro-container card">
-                        <div class="pomodoro-modes">
-                            <button class="pomo-mode-btn active" data-time="25" data-break="5">25 / 5</button>
-                            <button class="pomo-mode-btn" data-time="50" data-break="10">50 / 10</button>
-                            <button class="pomo-mode-btn" data-time="90" data-break="15">90 / 15</button>
-                            <button class="pomo-mode-btn" data-time="custom">Custom</button>
-                        </div>
-                        <div class="pomo-timer-display">
-                            <span id="pomo-time">25:00</span>
-                        </div>
-                        <div class="pomo-status" id="pomo-status-text">Focus Session</div>
-                        <div class="pomo-controls">
-                            <button class="btn primary lg" id="pomo-start-btn"><i class="fa-solid fa-play"></i> Start</button>
-                            <button class="btn secondary lg" id="pomo-pause-btn" disabled><i class="fa-solid fa-pause"></i> Pause</button>
-                            <button class="btn danger lg" id="pomo-reset-btn"><i class="fa-solid fa-rotate-right"></i> Reset</button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- STATISTICS VIEW -->
-                <section id="stats-view" class="view">
-                    <h2>Performance & Analytics</h2>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-icon study-time"><i class="fa-solid fa-clock"></i></div>
-                            <div class="metric-info">
-                                <h3>Today's Study Time</h3>
-                                <p id="stat-today-time">0m</p>
-                            </div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon weekly-prog"><i class="fa-solid fa-calendar-week"></i></div>
-                            <div class="metric-info">
-                                <h3>Weekly Study Time</h3>
-                                <p id="stat-weekly-time">0m</p>
-                            </div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon monthly-prog"><i class="fa-solid fa-calendar"></i></div>
-                            <div class="metric-info">
-                                <h3>Monthly Study Time</h3>
-                                <p id="stat-monthly-time">0m</p>
-                            </div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-icon tasks-rem"><i class="fa-solid fa-check-double"></i></div>
-                            <div class="metric-info">
-                                <h3>Completion Rate</h3>
-                                <p id="stat-completion-rate">0%</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>Tasks Breakdown</h3>
-                        <div class="stats-breakdown-flex">
-                            <div>Completed Tasks: <span id="stat-completed-count">0</span></div>
-                            <div>Pending Tasks: <span id="stat-pending-count">0</span></div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>Study Consistency Graph (Last 7 Days)</h3>
-                        <div id="study-graph" class="study-graph">
-                            <!-- Dynamic graph bars -->
-                        </div>
-                    </div>
-                </section>
-
-                <!-- GOALS VIEW -->
-                <section id="goals-view" class="view">
-                    <h2>Target Objectives</h2>
-                    <div class="goals-grid">
-                        <div class="card">
-                            <h3>Monthly Goals</h3>
-                            <textarea id="goal-monthly-text" placeholder="Set broad monthly objectives..."></textarea>
-                            <div class="progress-bar-container"><div id="goal-monthly-prog" class="progress-bar-fill" style="width:0%"></div></div>
-                        </div>
-                        <div class="card">
-                            <h3>Weekly Goals</h3>
-                            <textarea id="goal-weekly-text" placeholder="Set weekly milestones..."></textarea>
-                            <div class="progress-bar-container"><div id="goal-weekly-prog" class="progress-bar-fill" style="width:0%"></div></div>
-                        </div>
-                        <div class="card">
-                            <h3>Daily Goals</h3>
-                            <textarea id="goal-daily-text" placeholder="Set immediate daily targets..."></textarea>
-                            <div class="progress-bar-container"><div id="goal-daily-prog" class="progress-bar-fill" style="width:0%"></div></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- SEARCH VIEW -->
-                <section id="search-view" class="view">
-                    <h2>Search & Filter Tasks</h2>
-                    <div class="card search-filter-card">
-                        <div class="search-inputs-row">
-                            <input type="text" id="search-input" placeholder="Search task name...">
-                            <select id="filter-status">
-                                <option value="all">All Status</option>
-                                <option value="completed">Completed</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                            <select id="filter-priority">
+                <!-- 2. PLANNER & TASKS VIEW -->
+                <section class="app-view" id="planner-view">
+                    <div class="action-toolbar">
+                        <div class="filter-group">
+                            <button class="filter-chip active" data-filter="all">All</button>
+                            <button class="filter-chip" data-filter="pending">Pending</button>
+                            <button class="filter-chip" data-filter="completed">Completed</button>
+                            <select id="priorityFilter" class="select-box">
                                 <option value="all">All Priorities</option>
                                 <option value="High">High</option>
                                 <option value="Medium">Medium</option>
                                 <option value="Low">Low</option>
                             </select>
-                            <select id="filter-category">
-                                <option value="all">All Categories</option>
-                                <option value="Study">Study</option>
-                                <option value="Coding">Coding</option>
-                                <option value="Gym">Gym</option>
-                                <option value="Reading">Reading</option>
-                                <option value="Editing">Editing</option>
-                                <option value="Other">Other</option>
-                            </select>
                         </div>
+                        <button class="btn-primary" id="openTaskModalBtn"><i class="fa-solid fa-plus"></i> Add New Task</button>
                     </div>
-                    <div class="card">
-                        <h3>Search Results</h3>
-                        <div id="search-results-container" class="tasks-container"></div>
+
+                    <div class="tasks-container" id="tasksListContainer">
+                        <!-- Dynamic Tasks Cards -->
                     </div>
                 </section>
 
-                <!-- BACKUP & RESET VIEW -->
-                <section id="backup-view" class="view">
-                    <h2>Data Management & Backup</h2>
-                    <div class="backup-grid">
-                        <div class="card">
-                            <h3><i class="fa-solid fa-file-arrow-down"></i> Export Data</h3>
-                            <p>Download all your planner data, tasks, and history as a JSON file.</p>
-                            <button class="btn primary" id="export-btn"><i class="fa-solid fa-download"></i> Export JSON</button>
+                <!-- 3. CALENDAR VIEW -->
+                <section class="app-view" id="calendar-view">
+                    <div class="calendar-header-toolbar">
+                        <div class="cal-nav-controls">
+                            <button class="icon-btn" id="prevMonthBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                            <h3 id="calMonthYearLabel">Month Year</h3>
+                            <button class="icon-btn" id="nextMonthBtn"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
-                        <div class="card">
-                            <h3><i class="fa-solid fa-file-arrow-up"></i> Import Data</h3>
-                            <p>Restore your planner from a previously saved JSON backup file.</p>
-                            <input type="file" id="import-file-input" accept=".json" style="display:none">
-                            <button class="btn secondary" id="import-btn"><i class="fa-solid fa-upload"></i> Import JSON</button>
+                        <div class="cal-view-modes">
+                            <button class="filter-chip active" data-cal-mode="month">Monthly</button>
+                            <button class="filter-chip" data-cal-mode="list">Agenda</button>
                         </div>
-                        <div class="card danger-card">
-                            <h3><i class="fa-solid fa-triangle-exclamation"></i> Reset App</h3>
-                            <p>Clear all local data and restore the application to factory defaults.</p>
-                            <button class="btn danger" id="reset-btn"><i class="fa-solid fa-trash"></i> Reset Planner</button>
+                    </div>
+                    <div class="calendar-grid-wrapper" id="calendarGrid">
+                        <!-- Dynamic Calendar Grid -->
+                    </div>
+                </section>
+
+                <!-- 4. TIMER VIEW -->
+                <section class="app-view" id="timer-view">
+                    <div class="timer-container-card">
+                        <div class="timer-tabs">
+                            <button class="timer-tab active" data-timer-mode="pomodoro">Pomodoro (25m)</button>
+                            <button class="timer-tab" data-timer-mode="shortBreak">Short Break (5m)</button>
+                            <button class="timer-tab" data-timer-mode="longBreak">Long Break (15m)</button>
+                            <button class="timer-tab" data-timer-mode="stopwatch">Stopwatch</button>
+                        </div>
+                        <div class="timer-display-circle">
+                            <span id="timerDisplayTime">25:00</span>
+                            <span id="timerModeLabel">Focus Session</span>
+                        </div>
+                        <div class="timer-actions">
+                            <button class="btn-primary btn-lg" id="timerStartBtn"><i class="fa-solid fa-play"></i> Start</button>
+                            <button class="btn-secondary btn-lg" id="timerResetBtn"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                            <button class="icon-btn" id="timerFullscreenBtn" title="Fullscreen Mode"><i class="fa-solid fa-expand"></i></button>
+                        </div>
+                    </div>
+                    <div class="card session-history-card">
+                        <h3><i class="fa-solid fa-history"></i> Session History</h3>
+                        <ul id="sessionHistoryList">
+                            <li>No completed sessions yet today.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 5. ALARM CENTER VIEW -->
+                <section class="app-view" id="alarm-view">
+                    <div class="action-toolbar">
+                        <h3><i class="fa-solid fa-bell"></i> Active Alarms</h3>
+                        <button class="btn-primary" id="addAlarmBtn"><i class="fa-solid fa-plus"></i> Set Alarm</button>
+                    </div>
+                    <div class="alarms-grid" id="alarmsListContainer">
+                        <!-- Dynamic Alarms -->
+                    </div>
+                </section>
+
+                <!-- 6. NOTES VIEW -->
+                <section class="app-view" id="notes-view">
+                    <div class="action-toolbar">
+                        <div class="search-bar-top">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" id="noteSearchInput" placeholder="Search notes...">
+                        </div>
+                        <button class="btn-primary" id="addNoteBtn"><i class="fa-solid fa-plus"></i> Create Note</button>
+                    </div>
+                    <div class="notes-grid" id="notesGridContainer">
+                        <!-- Dynamic Notes -->
+                    </div>
+                </section>
+
+                <!-- 7. ANALYTICS VIEW -->
+                <section class="app-view" id="analytics-view">
+                    <div class="analytics-grid">
+                        <div class="card chart-card">
+                            <h3>Study Hours Analytics</h3>
+                            <div class="chart-mock" id="studyHoursChartMock">
+                                <!-- Dynamic Render -->
+                            </div>
+                        </div>
+                        <div class="card chart-card">
+                            <h3>Task Completion Ratio</h3>
+                            <div class="chart-mock" id="taskRatioChartMock">
+                                <!-- Dynamic Render -->
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- SETTINGS VIEW -->
-                <section id="settings-view" class="view">
-                    <h2>Application Settings</h2>
-                    <div class="card settings-card">
+                <!-- 8. SETTINGS VIEW -->
+                <section class="app-view" id="settings-view">
+                    <div class="settings-container card">
+                        <h3>Preferences & System</h3>
                         <div class="setting-item">
                             <div>
-                                <h3>Dark Mode</h3>
-                                <p>Switch between dark and light themes</p>
+                                <h4>Appearance Theme</h4>
+                                <p>Switch between dark and light world-class UI</p>
                             </div>
-                            <label class="switch">
-                                <input type="checkbox" id="settings-theme-toggle" checked>
-                                <span class="slider round"></span>
-                            </label>
+                            <button class="btn-secondary" id="settingsThemeToggle">Toggle Dark/Light</button>
                         </div>
                         <div class="setting-item">
                             <div>
-                                <h3>Alarm Enable / Disable</h3>
-                                <p>Play sound notifications when task timers finish</p>
+                                <h4>Data Management</h4>
+                                <p>Backup your planner data or restore from JSON file</p>
                             </div>
-                            <label class="switch">
-                                <input type="checkbox" id="settings-alarm-toggle" checked>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <div>
-                                <h3>Alarm Volume</h3>
-                                <p>Adjust alert audio loudness</p>
+                            <div class="btn-group">
+                                <button class="btn-secondary" id="exportDataBtn"><i class="fa-solid fa-download"></i> Export</button>
+                                <label class="btn-secondary upload-label"><i class="fa-solid fa-upload"></i> Import <input type="file" id="importDataInput" hidden></label>
                             </div>
-                            <input type="range" id="alarm-volume-slider" min="0" max="1" step="0.05" value="0.8">
-                        </div>
-                        <div class="setting-item">
-                            <div>
-                                <h3>Browser Notifications</h3>
-                                <p>Show desktop notifications on timer completion</p>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" id="settings-notif-toggle" checked>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <div>
-                                <h3>Auto Start Next Task / Break</h3>
-                                <p>Automatically initiate consecutive timers</p>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" id="settings-autostart-toggle">
-                                <span class="slider round"></span>
-                            </label>
                         </div>
                     </div>
                 </section>
+
             </div>
         </main>
     </div>
 
-    <!-- ADD/EDIT TASK MODAL -->
-    <div id="task-modal" class="modal">
-        <div class="modal-content card">
-            <h3 id="modal-title">Add Study Task</h3>
-            <form id="task-form">
-                <input type="hidden" id="task-id">
+    <!-- Modals -->
+    <div class="modal-backdrop" id="taskModal">
+        <div class="modal-card">
+            <h3 id="modalTaskTitle">New Task</h3>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
                 <div class="form-group">
-                    <label>Task Name</label>
-                    <input type="text" id="task-name" required placeholder="e.g., Read Quantum Physics Chapter 3">
+                    <label>Task Title</label>
+                    <input type="text" id="taskTitleInput" required placeholder="e.g. Complete React Module">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Duration</label>
-                        <select id="task-duration-preset">
-                            <option value="20">20 Minutes</option>
-                            <option value="45" selected>45 Minutes</option>
-                            <option value="90">90 Minutes</option>
-                            <option value="120">2 Hours</option>
-                            <option value="180">3 Hours</option>
-                            <option value="custom">Custom Duration (Minutes)</option>
-                        </select>
+                        <label>Category</label>
+                        <input type="text" id="taskCategoryInput" required placeholder="e.g. Academics">
                     </div>
-                    <div class="form-group" id="custom-duration-wrapper" style="display:none;">
-                        <label>Custom Minutes</label>
-                        <input type="number" id="task-custom-duration" min="1" value="45">
-                    </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
                         <label>Priority</label>
-                        <select id="task-priority">
+                        <select id="taskPriorityInput">
                             <option value="High">High</option>
                             <option value="Medium" selected>Medium</option>
                             <option value="Low">Low</option>
                         </select>
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label>Category</label>
-                        <select id="task-category">
-                            <option value="Study" selected>Study</option>
-                            <option value="Coding">Coding</option>
-                            <option value="Gym">Gym</option>
-                            <option value="Reading">Reading</option>
-                            <option value="Editing">Editing</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label>Due Date</label>
+                        <input type="date" id="taskDateInput" required>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn secondary" id="close-modal">Cancel</button>
-                    <button type="submit" class="btn primary">Save Task</button>
+                    <button type="button" class="btn-secondary" id="closeTaskModal">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Task</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ACTIVE TIMER OVERLAY MODAL -->
-    <div id="active-timer-modal" class="modal">
-        <div class="modal-content card timer-modal-content">
-            <h3 id="active-timer-task-name">Task Name</h3>
-            <div class="huge-timer-display" id="active-timer-countdown">45:00</div>
-            <div class="timer-modal-actions">
-                <button class="btn primary" id="modal-start-btn"><i class="fa-solid fa-play"></i> Start</button>
-                <button class="btn secondary" id="modal-pause-btn" disabled><i class="fa-solid fa-pause"></i> Pause</button>
-                <button class="btn secondary" id="modal-resume-btn" style="display:none;"><i class="fa-solid fa-play"></i> Resume</button>
-                <button class="btn danger" id="modal-stop-btn"><i class="fa-solid fa-stop"></i> Stop</button>
-                <button class="btn secondary" id="modal-restart-btn"><i class="fa-solid fa-rotate-right"></i> Restart</button>
-            </div>
-            <button class="btn secondary close-timer-overlay" id="close-timer-modal">Minimize / Close</button>
-        </div>
-    </div>
+    <!-- Alarm Audio Element & Custom Tone Upload -->
+    <audio id="alarmAudio" preload="auto"></audio>
 
-    <!-- LOUD ALARM POPUP OVERLAY -->
-    <div id="alarm-overlay" class="modal alarm-modal">
-        <div class="modal-content card alarm-modal-content">
-            <i class="fa-solid fa-bell-slash alarm-icon-pulse"></i>
-            <h2>Task Completed!</h2>
-            <p id="alarm-task-msg">Your study timer session has successfully concluded.</p>
-            <button class="btn danger lg pulse-btn" id="stop-alarm-btn"><i class="fa-solid fa-bell-slash"></i> STOP ALARM</button>
-        </div>
-    </div>
-
+    <!-- Main JavaScript Application Script -->
     <script src="script.js"></script>
 </body>
 </html>
