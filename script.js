@@ -1,629 +1,289 @@
-:root {
-    --bg-main: #0f172a;
-    --bg-sidebar: #1e293b;
-    --card-bg: rgba(30, 41, 59, 0.70);
-    --border-color: rgba(255, 255, 255, 0.08);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --accent-primary: #6366f1;
-    --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --sidebar-width: 260px;
-    --header-height: 70px;
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-body.light {
-    --bg-main: #f1f5f9;
-    --bg-sidebar: #ffffff;
-    --card-bg: rgba(255, 255, 255, 0.85);
-    --border-color: rgba(0, 0, 0, 0.08);
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    min-height: 100vh;
-    overflow-x: hidden;
-}
-
-/* App Layout */
-.app-layout {
-    display: flex;
-    min-height: 100vh;
-}
-
-/* Sidebar */
-.sidebar {
-    width: var(--sidebar-width);
-    background-color: var(--bg-sidebar);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    height: 100vh;
-    z-index: 100;
-    transition: var(--transition);
-}
-
-.sidebar-header {
-    height: var(--header-height);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.app-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.mobile-close-btn {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    cursor: pointer;
-}
-
-.sidebar-menu {
-    padding: 1.5rem 1rem;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.menu-category {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 1.25rem 0 0.5rem 0.75rem;
-}
-
-.nav-item {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    padding: 0.75rem 1rem;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-    margin-bottom: 0.25rem;
-}
-
-.nav-item:hover, .nav-item.active {
-    background: var(--accent-gradient);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-.sidebar-footer {
-    padding: 1rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.user-profile-mini {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--accent-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-}
-
-.user-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.user-name {
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.user-status {
-    font-size: 0.75rem;
-    color: var(--success);
-}
-
-/* Main Content */
-.main-content {
-    flex: 1;
-    margin-left: var(--sidebar-width);
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    transition: var(--transition);
-}
-
-.top-navbar {
-    height: var(--header-height);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-    z-index: 90;
-}
-
-.nav-left, .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    cursor: pointer;
-}
-
-.view-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-}
-
-.search-bar-top {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--border-color);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    width: 240px;
-}
-
-.search-bar-top input {
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    outline: none;
-    width: 100%;
-    font-size: 0.9rem;
-}
-
-.icon-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--card-bg);
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.icon-btn:hover {
-    background: var(--accent-primary);
-    color: #fff;
-    border-color: transparent;
-}
-
-/* Views Wrapper */
-.views-wrapper {
-    padding: 2rem;
-    flex: 1;
-}
-
-.app-view {
-    display: none;
-    animation: fadeIn 0.4s ease-in-out;
-}
-
-.app-view.active {
-    display: block;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Glass Cards & Elements */
-.card, .welcome-banner, .metric-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-}
-
-.welcome-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
-}
-
-.welcome-text h1 {
-    font-size: 1.75rem;
-    font-weight: 800;
-    margin-bottom: 0.25rem;
-}
-
-.quote-box {
-    margin-top: 1rem;
-    font-style: italic;
-    color: var(--text-secondary);
-    display: flex;
-    gap: 0.55rem;
-    align-items: center;
-}
-
-.weather-widget {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: var(--card-bg);
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-}
-
-.weather-icon {
-    font-size: 2rem;
-    color: var(--warning);
-}
-
-/* Metrics Grid */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.metric-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
-}
-
-.metric-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: #fff;
-}
-
-.metric-icon.blue { background: #3b82f6; }
-.metric-icon.green { background: #22c55e; }
-.metric-icon.orange { background: #f59e0b; }
-.metric-icon.purple { background: #a855f7; }
-
-.metric-info h3 {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.metric-info span {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.dashboard-split {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 1.5rem;
-}
-
-/* Buttons */
-.btn-primary, .btn-primary-sm {
-    background: var(--accent-gradient);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.btn-primary { padding: 0.75rem 1.25rem; font-size: 0.95rem; }
-.btn-primary-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
-.btn-lg { padding: 1rem 2rem; font-size: 1.1rem; }
-
-.btn-primary:hover, .btn-primary-sm:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-}
-
-.btn-secondary {
-    background: var(--border-color);
-    color: var(--text-primary);
-    border: none;
-    border-radius: 8px;
-    padding: 0.75rem 1.25rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-secondary:hover {
-    background: var(--text-secondary);
-    color: #fff;
-}
-
-/* Action Toolbar */
-.action-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.filter-group {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.filter-chip {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.filter-chip.active, .filter-chip:hover {
-    background: var(--accent-primary);
-    color: #fff;
-    border-color: transparent;
-}
-
-.select-box {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    outline: none;
-}
-
-/* Tasks Grid */
-.tasks-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.task-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    position: relative;
-    transition: var(--transition);
-}
-
-.task-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-}
-
-.task-card.completed {
-    opacity: 0.6;
-    text-decoration: line-through;
-}
-
-.task-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.task-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.6rem;
-    border-radius: 6px;
-    font-weight: 700;
-}
-
-.badge-High { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-.badge-Medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-.badge-Low { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-
-/* Modals */
-.modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal-backdrop.active {
-    display: flex;
-}
-
-.modal-card {
-    background: var(--bg-sidebar);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    width: 100%;
-    max-width: 450px;
-    padding: 2rem;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes scaleUp {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-.form-group {
-    margin-bottom: 1.25rem;
-}
-
-.form-group label {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: var(--text-secondary);
-}
-
-.form-group input, .form-group select {
-    width: 100%;
-    padding: 0.75rem;
-    background: var(--bg-main);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-primary);
-    outline: none;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-
-/* Timer View */
-.timer-container-card {
-    text-align: center;
-    max-width: 600px;
-    margin: 0 auto 2rem auto;
-    padding: 3rem 2rem;
-    background: var(--card-bg);
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
-    backdrop-filter: blur(15px);
-}
-
-.timer-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
-
-.timer-tab {
-    background: var(--border-color);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    color: var(--text-secondary);
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.timer-tab.active, .timer-tab:hover {
-    background: var(--accent-primary);
-    color: #fff;
-}
-
-.timer-display-circle {
-    font-size: 5rem;
-    font-weight: 800;
-    margin: 1.5rem 0;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: flex;
-    flex-direction: column;
-}
-
-#timerModeLabel {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    -webkit-text-fill-color: var(--text-secondary);
-    margin-top: 0.5rem;
-}
-
-.timer-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.active { transform: translateX(0); }
-    .main-content { margin-left: 0; }
-    .menu-toggle { display: block; }
-    .mobile-close-btn { display: block; }
-    .dashboard-split { grid-template-columns: 1fr; }
-    .welcome-banner { flex-direction: column; gap: 1rem; align-items: flex-start; }
-}
+/**
+ * NexusStudy - Premium Productivity Application
+ * Fully optimized frontend engine with robust state management & feature parity.
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Application State ---
+    let state = {
+        currentView: 'dashboard-view',
+        tasks: JSON.parse(localStorage.getItem('nexus_tasks')) || [
+            { id: 1, title: 'Master Advanced Algorithms', category: 'Academics', priority: 'High', date: '2026-06-10', completed: false },
+            { id: 2, title: 'Quantum Physics Lab Report', category: 'Science', priority: 'Medium', date: '2026-06-12', completed: true }
+        ],
+        notes: JSON.parse(localStorage.getItem('nexus_notes')) || [
+            { id: 1, title: 'Design System Rules', content: 'Use glassmorphism, soft shadows and clean typography.', pinned: true, color: '#6366f1' }
+        ],
+        alarms: JSON.parse(localStorage.getItem('nexus_alarms')) || [],
+        timer: {
+            mode: 'pomodoro',
+            timeLeft: 25 * 60,
+            isRunning: false,
+            timerId: null
+        },
+        theme: localStorage.getItem('nexus_theme') || 'dark'
+    };
+
+    // --- DOM Elements ---
+    const navItems = document.querySelectorAll('.nav-item');
+    const appViews = document.querySelectorAll('.app-view');
+    const viewTitle = document.getElementById('viewTitle');
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const settingsThemeToggle = document.getElementById('settingsThemeToggle');
+
+    // --- Theme Manager ---
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.body.classList.add('light');
+            document.documentElement.classList.remove('dark');
+            if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+        } else {
+            document.body.classList.remove('light');
+            document.documentElement.classList.add('dark');
+            if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        }
+        localStorage.setItem('nexus_theme', theme);
+        state.theme = theme;
+    }
+    applyTheme(state.theme);
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+        });
+    }
+    if (settingsThemeToggle) {
+        settingsThemeToggle.addEventListener('click', () => {
+            applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+        });
+    }
+
+    // --- Navigation ---
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            const targetId = item.getAttribute('data-target');
+            if (!targetId) return;
+
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            appViews.forEach(view => view.classList.remove('active'));
+            const targetView = document.getElementById(targetId);
+            if (targetView) targetView.classList.add('active');
+
+            viewTitle.textContent = item.textContent.trim();
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    });
+
+    if (menuToggle) menuToggle.addEventListener('click', () => sidebar.classList.add('active'));
+    if (mobileCloseBtn) mobileCloseBtn.addEventListener('click', () => sidebar.classList.remove('active'));
+
+    // --- Dashboard & Metrics Engine ---
+    function updateDashboardMetrics() {
+        const total = state.tasks.length;
+        const completed = state.tasks.filter(t => t.completed).length;
+        const pending = total - completed;
+        const score = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        document.getElementById('dashProdScore').textContent = `${score}%`;
+        document.getElementById('dashCompletedTasks').textContent = `${completed}/${total}`;
+        document.getElementById('dashPendingTasks').textContent = pending;
+        
+        // Date display
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDateDisplay').textContent = new Date().toLocaleDateString('en-US', options);
+    }
+
+    // --- Planner / Task Management ---
+    const taskModal = document.getElementById('taskModal');
+    const openTaskModalBtn = document.getElementById('openTaskModalBtn');
+    const closeTaskModal = document.getElementById('closeTaskModal');
+    const taskForm = document.getElementById('taskForm');
+    const tasksListContainer = document.getElementById('tasksListContainer');
+
+    if (openTaskModalBtn) openTaskModalBtn.addEventListener('click', () => taskModal.classList.add('active'));
+    if (closeTaskModal) closeTaskModal.addEventListener('click', () => taskModal.classList.remove('active'));
+
+    function renderTasks(filter = 'all', priorityFilterVal = 'all') {
+        if (!tasksListContainer) return;
+        tasksListContainer.innerHTML = '';
+
+        let filtered = state.tasks.filter(t => {
+            if (filter === 'completed' && !t.completed) return false;
+            if (filter === 'pending' && t.completed) return false;
+            if (priorityFilterVal !== 'all' && t.priority !== priorityFilterVal) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            tasksListContainer.innerHTML = `<p class="empty-state">No tasks available in this view.</p>`;
+            return;
+        }
+
+        filtered.forEach(task => {
+            const card = document.createElement('div');
+            card.className = `task-card ${task.completed ? 'completed' : ''}`;
+            card.innerHTML = `
+                <div class="task-header">
+                    <span class="task-badge badge-${task.priority}">${task.priority}</span>
+                    <div class="task-actions-btns">
+                        <button onclick="toggleTask(${task.id})" class="icon-btn-sm" title="Toggle"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="deleteTask(${task.id})" class="icon-btn-sm danger" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+                <h4>${task.title}</h4>
+                <p class="task-meta"><i class="fa-solid fa-folder"></i> ${task.category} &nbsp;|&nbsp; <i class="fa-solid fa-calendar"></i> ${task.date}</p>
+            `;
+            tasksListContainer.appendChild(card);
+        });
+        updateDashboardMetrics();
+    }
+
+    if (taskForm) {
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newTask = {
+                id: Date.now(),
+                title: document.getElementById('taskTitleInput').value,
+                category: document.getElementById('taskCategoryInput').value,
+                priority: document.getElementById('taskPriorityInput').value,
+                date: document.getElementById('taskDateInput').value,
+                completed: false
+            };
+            state.tasks.push(newTask);
+            localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
+            taskModal.classList.remove('active');
+            taskForm.reset();
+            renderTasks();
+        });
+    }
+
+    window.toggleTask = function(id) {
+        state.tasks = state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+        localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
+        renderTasks();
+    };
+
+    window.deleteTask = function(id) {
+        state.tasks = state.tasks.filter(t => t.id !== id);
+        localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
+        renderTasks();
+    };
+
+    // --- Focus Timer Engine ---
+    const timerDisplayTime = document.getElementById('timerDisplayTime');
+    const timerStartBtn = document.getElementById('timerStartBtn');
+    const timerResetBtn = document.getElementById('timerResetBtn');
+    const timerTabs = document.querySelectorAll('.timer-tab');
+    const timerModeLabel = document.getElementById('timerModeLabel');
+
+    const timerDurations = { pomodoro: 25 * 60, shortBreak: 5 * 60, longBreak: 15 * 60, stopwatch: 0 };
+
+    timerTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            timerTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const mode = tab.getAttribute('data-timer-mode');
+            state.timer.mode = mode;
+            state.timer.timeLeft = timerDurations[mode];
+            state.timer.isRunning = false;
+            clearInterval(state.timer.timerId);
+            timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+            updateTimerDisplay();
+        });
+    });
+
+    function updateTimerDisplay() {
+        if (!timerDisplayTime) return;
+        const mins = Math.floor(state.timer.timeLeft / 60);
+        const secs = state.timer.timeLeft % 60;
+        timerDisplayTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    if (timerStartBtn) {
+        timerStartBtn.addEventListener('click', () => {
+            if (state.timer.isRunning) {
+                clearInterval(state.timer.timerId);
+                state.timer.isRunning = false;
+                timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+            } else {
+                state.timer.isRunning = true;
+                timerStartBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+                state.timer.timerId = setInterval(() => {
+                    if (state.timer.mode === 'stopwatch') {
+                        state.timer.timeLeft++;
+                        updateTimerDisplay();
+                    } else {
+                        if (state.timer.timeLeft > 0) {
+                            state.timer.timeLeft--;
+                            updateTimerDisplay();
+                        } else {
+                            clearInterval(state.timer.timerId);
+                            alert('Focus Session Completed! Take a break.');
+                            state.timer.isRunning = false;
+                            timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+                        }
+                    }
+                }, 1000);
+            }
+        });
+    }
+
+    if (timerResetBtn) {
+        timerResetBtn.addEventListener('click', () => {
+            clearInterval(state.timer.timerId);
+            state.timer.isRunning = false;
+            state.timer.timeLeft = timerDurations[state.timer.mode];
+            timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
+            updateTimerDisplay();
+        });
+    }
+
+    // --- Settings & Export/Import Data ---
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const importDataInput = document.getElementById('importDataInput');
+
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `nexus_study_planner_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+    }
+
+    if (importDataInput) {
+        importDataInput.addEventListener('change', (e) => {
+            const fileReader = new FileReader();
+            if(e.target.files[0]) {
+                fileReader.readAsText(e.target.files[0], "UTF-8");
+                fileReader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (imported.tasks) state.tasks = imported.tasks;
+                        if (imported.notes) state.notes = imported.notes;
+                        localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
+                        localStorage.setItem('nexus_notes', JSON.stringify(state.notes));
+                        renderTasks();
+                        alert('Data successfully imported and synchronized!');
+                    } catch (err) {
+                        alert('Invalid backup JSON file.');
+                    }
+                };
+            }
+        });
+    }
+
+    // --- Initial Engine Start ---
+    renderTasks();
+    updateDashboardMetrics();
+});
