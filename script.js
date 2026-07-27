@@ -1,289 +1,493 @@
 /**
- * NexusStudy - Premium Productivity Application
- * Fully optimized frontend engine with robust state management & feature parity.
+ * Lucky Nitro - Cyberpunk Road with PNG Sprite Support & Fallback
+ * script.js
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Application State ---
-    let state = {
-        currentView: 'dashboard-view',
-        tasks: JSON.parse(localStorage.getItem('nexus_tasks')) || [
-            { id: 1, title: 'Master Advanced Algorithms', category: 'Academics', priority: 'High', date: '2026-06-10', completed: false },
-            { id: 2, title: 'Quantum Physics Lab Report', category: 'Science', priority: 'Medium', date: '2026-06-12', completed: true }
-        ],
-        notes: JSON.parse(localStorage.getItem('nexus_notes')) || [
-            { id: 1, title: 'Design System Rules', content: 'Use glassmorphism, soft shadows and clean typography.', pinned: true, color: '#6366f1' }
-        ],
-        alarms: JSON.parse(localStorage.getItem('nexus_alarms')) || [],
-        timer: {
-            mode: 'pomodoro',
-            timeLeft: 25 * 60,
-            isRunning: false,
-            timerId: null
-        },
-        theme: localStorage.getItem('nexus_theme') || 'dark'
-    };
+// Use the existing canvas from index.html
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-    // --- DOM Elements ---
-    const navItems = document.querySelectorAll('.nav-item');
-    const appViews = document.querySelectorAll('.app-view');
-    const viewTitle = document.getElementById('viewTitle');
-    const sidebar = document.getElementById('sidebar');
-    const menuToggle = document.getElementById('menuToggle');
-    const mobileCloseBtn = document.getElementById('mobileCloseBtn');
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    const settingsThemeToggle = document.getElementById('settingsThemeToggle');
+// Game state flags & scoring variables
+let isGameOver = false;
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('luckyNitroBestScore')) || 0;
 
-    // --- Theme Manager ---
-    function applyTheme(theme) {
-        if (theme === 'light') {
-            document.body.classList.add('light');
-            document.documentElement.classList.remove('dark');
-            if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
-        } else {
-            document.body.classList.remove('light');
-            document.documentElement.classList.add('dark');
-            if(themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+// Load images with fallback support
+const playerImage = new Image();
+playerImage.src = 'assets/player.png';
+let playerImageLoaded = false;
+playerImage.onload = () => { playerImageLoaded = true; };
+
+const enemyImage = new Image();
+enemyImage.src = 'assets/enemy.png';
+let enemyImageLoaded = false;
+enemyImage.onload = () => { enemyImageLoaded = true; };
+
+// Handle canvas resizing to match window dimensions
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+/**
+ * Cyberpunk Road Renderer with Perspective Projection
+ */
+class CyberpunkRoad {
+    constructor() {
+        this.offsetY = 0;
+        this.speed = 8; // Scrolling speed
+    }
+
+    update() {
+        this.offsetY += this.speed;
+        if (this.offsetY >= 60) {
+            this.offsetY = 0;
         }
-        localStorage.setItem('nexus_theme', theme);
-        state.theme = theme;
-    }
-    applyTheme(state.theme);
-
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            applyTheme(state.theme === 'dark' ? 'light' : 'dark');
-        });
-    }
-    if (settingsThemeToggle) {
-        settingsThemeToggle.addEventListener('click', () => {
-            applyTheme(state.theme === 'dark' ? 'light' : 'dark');
-        });
     }
 
-    // --- Navigation ---
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            const targetId = item.getAttribute('data-target');
-            if (!targetId) return;
+    draw(ctx, width, height) {
+        // Perspective road parameters
+        const topRoadWidth = width * 0.15;   // Narrower at the horizon/top
+        const bottomRoadWidth = width * 0.55; // Wider at the bottom
+        const horizonY = height * 0.35;       // Vanishing point Y coordinate
+        const bottomY = height;              // Bottom of the screen
 
-            navItems.forEach(nav => nav.classList.remove('active'));
-            item.classList.add('active');
+        const centerX = width / 2;
 
-            appViews.forEach(view => view.classList.remove('active'));
-            const targetView = document.getElementById(targetId);
-            if (targetView) targetView.classList.add('active');
+        const topLeftX = centerX - topRoadWidth / 2;
+        const topRightX = centerX + topRoadWidth / 2;
+        const bottomLeftX = centerX - bottomRoadWidth / 2;
+        const bottomRightX = centerX + bottomRoadWidth / 2;
 
-            viewTitle.textContent = item.textContent.trim();
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('active');
-            }
-        });
-    });
+        // Draw dark asphalt road background using a trapezoid path
+        ctx.fillStyle = '#12121c';
+        ctx.beginPath();
+        ctx.moveTo(topLeftX, horizonY);
+        ctx.lineTo(topRightX, horizonY);
+        ctx.lineTo(bottomRightX, bottomY);
+        ctx.lineTo(bottomLeftX, bottomY);
+        ctx.closePath();
+        ctx.fill();
 
-    if (menuToggle) menuToggle.addEventListener('click', () => sidebar.classList.add('active'));
-    if (mobileCloseBtn) mobileCloseBtn.addEventListener('click', () => sidebar.classList.remove('active'));
+        // Draw glowing cyan neon borders following the perspective
+        ctx.save();
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 15;
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 4;
 
-    // --- Dashboard & Metrics Engine ---
-    function updateDashboardMetrics() {
-        const total = state.tasks.length;
-        const completed = state.tasks.filter(t => t.completed).length;
-        const pending = total - completed;
-        const score = total > 0 ? Math.round((completed / total) * 100) : 0;
+        // Left perspective border
+        ctx.beginPath();
+        ctx.moveTo(topLeftX, horizonY);
+        ctx.lineTo(bottomLeftX, bottomY);
+        ctx.stroke();
 
-        document.getElementById('dashProdScore').textContent = `${score}%`;
-        document.getElementById('dashCompletedTasks').textContent = `${completed}/${total}`;
-        document.getElementById('dashPendingTasks').textContent = pending;
+        // Right perspective border
+        ctx.beginPath();
+        ctx.moveTo(topRightX, horizonY);
+        ctx.lineTo(bottomRightX, bottomY);
+        ctx.stroke();
+        ctx.restore();
+
+        // Draw animated dashed center lane following the perspective
+        ctx.save();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+
+        const totalSegments = 20;
+        const segmentHeight = (bottomY - horizonY) / totalSegments;
         
-        // Date display
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('currentDateDisplay').textContent = new Date().toLocaleDateString('en-US', options);
+        for (let i = 0; i < totalSegments; i++) {
+            let progress = (i + (this.offsetY / 60)) % totalSegments;
+            
+            if (Math.floor(progress) % 2 === 0) {
+                let y1 = horizonY + progress * segmentHeight;
+                let y2 = horizonY + (progress + 0.6) * segmentHeight;
+
+                if (y2 > bottomY) y2 = bottomY;
+
+                let x1 = centerX;
+                let x2 = centerX;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+    }
+}
+
+/**
+ * Player Car Controller & Renderer with PNG Sprite Support & Fallback
+ */
+class PlayerCar {
+    constructor() {
+        this.width = 70;
+        this.height = 110;
+        this.x = canvas.width / 2; // Spawn exactly in the center lane
+        this.y = 0;
+        
+        this.vx = 0;
+        this.acceleration = 0.8;
+        this.friction = 0.85;
+        this.maxSpeed = 10;
+
+        // Input states
+        this.keys = {
+            left: false,
+            right: false
+        };
+
+        this.setupListeners();
     }
 
-    // --- Planner / Task Management ---
-    const taskModal = document.getElementById('taskModal');
-    const openTaskModalBtn = document.getElementById('openTaskModalBtn');
-    const closeTaskModal = document.getElementById('closeTaskModal');
-    const taskForm = document.getElementById('taskForm');
-    const tasksListContainer = document.getElementById('tasksListContainer');
-
-    if (openTaskModalBtn) openTaskModalBtn.addEventListener('click', () => taskModal.classList.add('active'));
-    if (closeTaskModal) closeTaskModal.addEventListener('click', () => taskModal.classList.remove('active'));
-
-    function renderTasks(filter = 'all', priorityFilterVal = 'all') {
-        if (!tasksListContainer) return;
-        tasksListContainer.innerHTML = '';
-
-        let filtered = state.tasks.filter(t => {
-            if (filter === 'completed' && !t.completed) return false;
-            if (filter === 'pending' && t.completed) return false;
-            if (priorityFilterVal !== 'all' && t.priority !== priorityFilterVal) return false;
-            return true;
+    setupListeners() {
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                this.keys.left = true;
+            }
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                this.keys.right = true;
+            }
         });
 
-        if (filtered.length === 0) {
-            tasksListContainer.innerHTML = `<p class="empty-state">No tasks available in this view.</p>`;
-            return;
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                this.keys.left = false;
+            }
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                this.keys.right = false;
+            }
+        });
+    }
+
+    update(canvasWidth, canvasHeight) {
+        // Position car near the bottom center of the road
+        this.y = canvasHeight - this.height - 30;
+
+        if (isNaN(this.x)) {
+            this.x = canvasWidth / 2;
         }
 
-        filtered.forEach(task => {
-            const card = document.createElement('div');
-            card.className = `task-card ${task.completed ? 'completed' : ''}`;
-            card.innerHTML = `
-                <div class="task-header">
-                    <span class="task-badge badge-${task.priority}">${task.priority}</span>
-                    <div class="task-actions-btns">
-                        <button onclick="toggleTask(${task.id})" class="icon-btn-sm" title="Toggle"><i class="fa-solid fa-check"></i></button>
-                        <button onclick="deleteTask(${task.id})" class="icon-btn-sm danger" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                </div>
-                <h4>${task.title}</h4>
-                <p class="task-meta"><i class="fa-solid fa-folder"></i> ${task.category} &nbsp;|&nbsp; <i class="fa-solid fa-calendar"></i> ${task.date}</p>
-            `;
-            tasksListContainer.appendChild(card);
-        });
-        updateDashboardMetrics();
+        // Handle acceleration based on input
+        if (this.keys.left) {
+            this.vx -= this.acceleration;
+        } else if (this.keys.right) {
+            this.vx += this.acceleration;
+        } else {
+            this.vx *= this.friction;
+        }
+
+        // Clamp velocity to max speed
+        if (this.vx > this.maxSpeed) this.vx = this.maxSpeed;
+        if (this.vx < -this.maxSpeed) this.vx = -this.maxSpeed;
+
+        if (Math.abs(this.vx) < 0.05) this.vx = 0;
+
+        this.x += this.vx;
+
+        // Keep the car strictly inside the road boundaries at the bottom width
+        const bottomRoadWidth = canvasWidth * 0.55;
+        const roadLeft = (canvasWidth - bottomRoadWidth) / 2;
+        const roadRight = roadLeft + bottomRoadWidth;
+
+        const margin = 15;
+        if (this.x - this.width / 2 < roadLeft + margin) {
+            this.x = roadLeft + margin + this.width / 2;
+            this.vx = 0;
+        }
+        if (this.x + this.width / 2 > roadRight - margin) {
+            this.x = roadRight - margin - this.width / 2;
+            this.vx = 0;
+        }
     }
 
-    if (taskForm) {
-        taskForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const newTask = {
-                id: Date.now(),
-                title: document.getElementById('taskTitleInput').value,
-                category: document.getElementById('taskCategoryInput').value,
-                priority: document.getElementById('taskPriorityInput').value,
-                date: document.getElementById('taskDateInput').value,
-                completed: false
-            };
-            state.tasks.push(newTask);
-            localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
-            taskModal.classList.remove('active');
-            taskForm.reset();
-            renderTasks();
-        });
+    // Get bounding box for AABB collision detection
+    getBounds() {
+        return {
+            x: this.x - this.width / 2,
+            y: this.y - this.height / 2,
+            width: this.width,
+            height: this.height
+        };
     }
 
-    window.toggleTask = function(id) {
-        state.tasks = state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-        localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
-        renderTasks();
-    };
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
 
-    window.deleteTask = function(id) {
-        state.tasks = state.tasks.filter(t => t.id !== id);
-        localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
-        renderTasks();
-    };
+        const tilt = this.vx * 0.015;
+        ctx.rotate(tilt);
 
-    // --- Focus Timer Engine ---
-    const timerDisplayTime = document.getElementById('timerDisplayTime');
-    const timerStartBtn = document.getElementById('timerStartBtn');
-    const timerResetBtn = document.getElementById('timerResetBtn');
-    const timerTabs = document.querySelectorAll('.timer-tab');
-    const timerModeLabel = document.getElementById('timerModeLabel');
+        if (playerImageLoaded) {
+            ctx.drawImage(playerImage, -this.width / 2, -this.height / 2, this.width, this.height);
+        } else {
+            // Fallback Canvas drawing
+            // Car Body
+            ctx.fillStyle = '#ff0055';
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 10;
 
-    const timerDurations = { pomodoro: 25 * 60, shortBreak: 5 * 60, longBreak: 15 * 60, stopwatch: 0 };
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 2 + 10, 20);
+            ctx.lineTo(-this.width / 2, -20);
+            ctx.lineTo(-this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 2, -20);
+            ctx.lineTo(this.width / 2 - 10, 20);
+            ctx.closePath();
+            ctx.fill();
 
-    timerTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            timerTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const mode = tab.getAttribute('data-timer-mode');
-            state.timer.mode = mode;
-            state.timer.timeLeft = timerDurations[mode];
-            state.timer.isRunning = false;
-            clearInterval(state.timer.timerId);
-            timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
-            updateTimerDisplay();
-        });
-    });
+            // Hood & Front Nose
+            ctx.fillStyle = '#b3003b';
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 3, -10);
+            ctx.lineTo(-this.width / 3, -10);
+            ctx.closePath();
+            ctx.fill();
 
-    function updateTimerDisplay() {
-        if (!timerDisplayTime) return;
-        const mins = Math.floor(state.timer.timeLeft / 60);
-        const secs = state.timer.timeLeft % 60;
-        timerDisplayTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            // Windshield
+            ctx.fillStyle = '#0b0b16';
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 4 + 4, -this.height / 2 + 12);
+            ctx.lineTo(this.width / 4 - 4, -this.height / 2 + 12);
+            ctx.lineTo(this.width / 3 - 4, -5);
+            ctx.lineTo(-this.width / 3 + 4, -5);
+            ctx.closePath();
+            ctx.fill();
+
+            // Headlights
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(-this.width / 2 + 6, -this.height / 2 + 2, 12, 4);
+            ctx.fillRect(this.width / 2 - 18, -this.height / 2 + 2, 12, 4);
+
+            // Taillights
+            ctx.shadowColor = '#ff3300';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#ff3300';
+            ctx.fillRect(-this.width / 2 + 4, this.height / 2 - 15, 14, 4);
+            ctx.fillRect(this.width / 2 - 18, this.height / 2 - 15, 14, 4);
+
+            // Wheels
+            ctx.fillStyle = '#111111';
+            ctx.shadowBlur = 0;
+            ctx.fillRect(-this.width / 2 - 4, -this.height / 3, 6, 22);
+            ctx.fillRect(this.width / 2 - 2, -this.height / 3, 6, 22);
+            ctx.fillRect(-this.width / 2 - 4, this.height / 4, 6, 26);
+            ctx.fillRect(this.width / 2 - 2, this.height / 4, 6, 26);
+        }
+
+        ctx.restore();
+    }
+}
+
+/**
+ * Enemy Car Class with PNG Sprite Support & Fallback
+ */
+class EnemyCar {
+    constructor() {
+        this.reset();
     }
 
-    if (timerStartBtn) {
-        timerStartBtn.addEventListener('click', () => {
-            if (state.timer.isRunning) {
-                clearInterval(state.timer.timerId);
-                state.timer.isRunning = false;
-                timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
-            } else {
-                state.timer.isRunning = true;
-                timerStartBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
-                state.timer.timerId = setInterval(() => {
-                    if (state.timer.mode === 'stopwatch') {
-                        state.timer.timeLeft++;
-                        updateTimerDisplay();
-                    } else {
-                        if (state.timer.timeLeft > 0) {
-                            state.timer.timeLeft--;
-                            updateTimerDisplay();
-                        } else {
-                            clearInterval(state.timer.timerId);
-                            alert('Focus Session Completed! Take a break.');
-                            state.timer.isRunning = false;
-                            timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
-                        }
-                    }
-                }, 1000);
-            }
-        });
+    reset() {
+        this.progress = 0;
+        this.speed = 0.012;
     }
 
-    if (timerResetBtn) {
-        timerResetBtn.addEventListener('click', () => {
-            clearInterval(state.timer.timerId);
-            state.timer.isRunning = false;
-            state.timer.timeLeft = timerDurations[state.timer.mode];
-            timerStartBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start';
-            updateTimerDisplay();
-        });
+    update() {
+        this.progress += this.speed;
+        if (this.progress > 1.0) {
+            this.reset();
+        }
     }
 
-    // --- Settings & Export/Import Data ---
-    const exportDataBtn = document.getElementById('exportDataBtn');
-    const importDataInput = document.getElementById('importDataInput');
+    // Get bounding box for accurate AABB collision detection
+    getBounds(width, height) {
+        const horizonY = height * 0.35;
+        const bottomY = height;
+        const centerX = width / 2;
 
-    if (exportDataBtn) {
-        exportDataBtn.addEventListener('click', () => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `nexus_study_planner_backup_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        });
+        const topRoadWidth = width * 0.15;
+        const bottomRoadWidth = width * 0.55;
+
+        const y = horizonY + this.progress * (bottomY - horizonY);
+        const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
+        const roadLeft = centerX - currentRoadWidth / 2;
+        const x = roadLeft + currentRoadWidth * 0.5;
+
+        const baseWidth = 65;
+        const baseHeight = 100;
+        const scale = 0.30 + 0.70 * this.progress;
+
+        const carWidth = baseWidth * scale;
+        const carHeight = baseHeight * scale;
+
+        return {
+            x: x - carWidth / 2,
+            y: y - carHeight / 2,
+            width: carWidth,
+            height: carHeight
+        };
     }
 
-    if (importDataInput) {
-        importDataInput.addEventListener('change', (e) => {
-            const fileReader = new FileReader();
-            if(e.target.files[0]) {
-                fileReader.readAsText(e.target.files[0], "UTF-8");
-                fileReader.onload = (event) => {
-                    try {
-                        const imported = JSON.parse(event.target.result);
-                        if (imported.tasks) state.tasks = imported.tasks;
-                        if (imported.notes) state.notes = imported.notes;
-                        localStorage.setItem('nexus_tasks', JSON.stringify(state.tasks));
-                        localStorage.setItem('nexus_notes', JSON.stringify(state.notes));
-                        renderTasks();
-                        alert('Data successfully imported and synchronized!');
-                    } catch (err) {
-                        alert('Invalid backup JSON file.');
-                    }
-                };
-            }
-        });
+    draw(ctx, width, height) {
+        const horizonY = height * 0.35;
+        const bottomY = height;
+        const centerX = width / 2;
+
+        const topRoadWidth = width * 0.15;
+        const bottomRoadWidth = width * 0.55;
+
+        const y = horizonY + this.progress * (bottomY - horizonY);
+        const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
+        const roadLeft = centerX - currentRoadWidth / 2;
+        const x = roadLeft + currentRoadWidth * 0.5;
+
+        const baseWidth = 65;
+        const baseHeight = 100;
+        const scale = 0.30 + 0.70 * this.progress;
+
+        const carWidth = baseWidth * scale;
+        const carHeight = baseHeight * scale;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        if (enemyImageLoaded) {
+            ctx.drawImage(enemyImage, -carWidth / 2, -carHeight / 2, carWidth, carHeight);
+        } else {
+            // Fallback Canvas drawing
+            ctx.fillStyle = '#ffaa00';
+            ctx.shadowColor = '#ffaa00';
+            ctx.shadowBlur = 12 * scale;
+
+            ctx.beginPath();
+            ctx.moveTo(-carWidth / 2 + 8 * scale, carHeight / 2);
+            ctx.lineTo(-carWidth / 2, -carHeight / 4);
+            ctx.lineTo(-carWidth / 4, -carHeight / 2);
+            ctx.lineTo(carWidth / 4, -carHeight / 2);
+            ctx.lineTo(carWidth / 2, -carHeight / 4);
+            ctx.lineTo(carWidth / 2 - 8 * scale, carHeight / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Windshield
+            ctx.fillStyle = '#0b0b16';
+            ctx.beginPath();
+            ctx.moveTo(-carWidth / 4 + 2, -carHeight / 2 + 8 * scale);
+            ctx.lineTo(carWidth / 4 - 2, -carHeight / 2 + 8 * scale);
+            ctx.lineTo(carWidth / 3 - 2, -2);
+            ctx.lineTo(-carWidth / 3 + 2, -2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Prominent Taillights for better visibility at a distance
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 15 * scale;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(-carWidth / 2 + 4 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+            ctx.fillRect(carWidth / 2 - 14 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+        }
+
+        ctx.restore();
+    }
+}
+
+// Initialize instances
+const road = new CyberpunkRoad();
+const playerCar = new PlayerCar();
+const enemyCar = new EnemyCar();
+
+/**
+ * AABB Collision Detection utility
+ */
+function checkCollision(rect1, rect2) {
+    return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+    );
+}
+
+/**
+ * Standard 60 FPS Game Loop
+ */
+function gameLoop() {
+    if (isGameOver) return;
+
+    // Clear canvas
+    ctx.fillStyle = '#0b0b16';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Update and render the perspective road
+    road.update();
+    road.draw(ctx, canvas.width, canvas.height);
+
+    // Update and render the enemy car
+    enemyCar.update();
+    enemyCar.draw(ctx, canvas.width, canvas.height);
+
+    // Update and render the player car
+    playerCar.update(canvas.width, canvas.height);
+    playerCar.draw(ctx);
+
+    // Increment score while game is running
+    score += 1;
+
+    // Display Score and Best Score in the top-right corner
+    ctx.save();
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#00f0ff';
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 8;
+    ctx.fillText(`SCORE: ${Math.floor(score / 10)}`, canvas.width - 30, 40);
+    ctx.fillText(`BEST: ${Math.floor(bestScore / 10)}`, canvas.width - 30, 70);
+    ctx.restore();
+
+    // Accurate AABB collision check every frame
+    const playerBounds = playerCar.getBounds();
+    const enemyBounds = enemyCar.getBounds(canvas.width, canvas.height);
+
+    if (checkCollision(playerBounds, enemyBounds)) {
+        isGameOver = true;
+
+        // Check and update best score via localStorage
+        const finalScoreVal = Math.floor(score / 10);
+        const bestScoreVal = Math.floor(bestScore / 10);
+        if (finalScoreVal > bestScoreVal) {
+            bestScore = score;
+            localStorage.setItem('luckyNitroBestScore', score);
+        }
     }
 
-    // --- Initial Engine Start ---
-    renderTasks();
-    updateDashboardMetrics();
-});
+    // If game over occurred, display message overlay and final scores
+    if (isGameOver) {
+        ctx.save();
+        ctx.font = 'bold 64px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ff0033';
+        ctx.shadowColor = '#ff0033';
+        ctx.shadowBlur = 25;
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+        return;
+    }
+
+    // Maintain 60 FPS
+    requestAnimationFrame(gameLoop);
+}
+
+// Start the game loop
+requestAnimationFrame(gameLoop);
